@@ -1,2 +1,2 @@
 # open-idle
-Open your current python file in IDLE
+A brackets extension to allow you to open current python file in IDLE.
