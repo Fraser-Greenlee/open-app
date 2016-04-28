@@ -4,7 +4,7 @@
     "use strict";
 
     var child_process = require("child_process"),
-        domainName = "builder.execute";
+        domainName = "idle.open";
 
     function exec(directory, command, callback) {
         child_process.exec(command, { cwd: directory}, function (err, stdout, stderr) {
