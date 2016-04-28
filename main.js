@@ -59,7 +59,7 @@ define(function (require, exports, module) {
         }).then(function () {
             cmd = 'idle '+curOpenFile+' & disown';
         }).then(function () {
-            nodeConnection.domains["builder.execute"].exec(curOpenDir, cmd)
+            nodeConnection.domains["idle.open"].exec(curOpenDir, cmd)
             .fail(function (err) {
 				console.log(_processCmdOutput(err));
                 alert(_processCmdOutput(err));
