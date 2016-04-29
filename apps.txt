@@ -1,0 +1,8 @@
+# Enter the app name on each line 
+# icon means you have added an icon image and a css class for the button
+# if you want to open the current file with the app just specify the language below or leave blank to open any file type
+#
+IDLE, icon, Python
+Terminal, icon
+# PgAdmin3, icon
+Xcode

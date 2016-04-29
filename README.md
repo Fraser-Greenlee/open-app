@@ -1,6 +1,4 @@
-# Quick launch IDLE and Terminal
+# open-app
 
-A brackets extension to add buttons to open IDLE and Terminal on the sidebar.
-
-Mac OS only.
+A brackets extension to allow you to open apps from the side bar.
 

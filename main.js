@@ -25,8 +25,11 @@
 /*global define, $, brackets, window */
 
 define(function (require, exports, module) {
-
-    var ExtensionUtils      = brackets.getModule("utils/ExtensionUtils"),
+	"use strict";
+	
+    var FileSystem          = brackets.getModule("filesystem/FileSystem"),
+		FileUtils           = brackets.getModule("file/FileUtils"),
+		ExtensionUtils      = brackets.getModule("utils/ExtensionUtils"),
 		CommandManager      = brackets.getModule("command/CommandManager"),
 		DocumentManager     = brackets.getModule("document/DocumentManager"),
 		KeyBindingManager   = brackets.getModule('command/KeyBindingManager'),
@@ -36,9 +39,33 @@ define(function (require, exports, module) {
 		IDLEHTML = '<a id="open-idle-btn" href="#" title="Open in IDLE"></a>',
 		TerminalHTML = '<a id="open-terminal-btn" href="#" title="Open Terminal"></a>',
 		curOpenDir,
-        curOpenFile,
-        curOpenLang,
-        cmd = '';
+		curOpenFile,
+		curOpenLang,
+		cmd = '';
+	
+	function replaceAll(s,k,v) {
+		while (s.indexOf(k) > -1) {
+			s = s.replace(k,v);
+		}
+		return s;
+	}
+	
+	function procc(k,s) {
+		if(typeof(k[0]) != 'object') {
+			k = [k];
+		}
+		for (var x = 0; x < k.length; x++) {
+			if (k[x].length == 2) {
+				s = replaceAll(s,'{'+k[x][0]+'}',k[x][1]);
+			} else {
+				s = replaceAll(s,'{'+k[x][0]+'}',k[x][0]);
+			}
+		}
+		while (s.indexOf('{') > -1) {
+			s = s.replace(/{.*?}/, '');
+		}
+		return s;
+	}
 
 	function _processCmdOutput(data) {
 		data = JSON.stringify(data);
@@ -48,50 +75,83 @@ define(function (require, exports, module) {
 			.replace(/\"/g, '')
 			.replace(/\\t/g, '\t');
 		return data;
-    }
-	
-    function handle(app) {
-        CommandManager.execute("file.saveAll")
-        curOpenDir  = DocumentManager.getCurrentDocument().file._parentPath;
-        curOpenFile = DocumentManager.getCurrentDocument().file._path;
-        curOpenLang = DocumentManager.getCurrentDocument().language._name;
-		
-		if(app == 'IDLE') {
-			if (curOpenLang != 'Python') {
-				cmd = 'open -a IDLE';
+	}
+
+	function handle(cmd,lang) {
+		curOpenDir  = DocumentManager.getCurrentDocument().file._parentPath;
+		curOpenFile = DocumentManager.getCurrentDocument().file._path;
+		curOpenLang = DocumentManager.getCurrentDocument().language._name;
+
+		if(lang != '') {
+			console.log('lang', lang, curOpenLang);
+			if (curOpenLang != lang) {
+				cmd = cmd.split(' ')[0];
 			} else {
-				cmd = 'open -a IDLE '+curOpenFile;
+				cmd = cmd.replace('$file',curOpenFile);
 			}
-		} else {
-			cmd = 'open -a '+app;
 		}
+		
+		cmd = 'open -a '+cmd;
 
-        nodeConnection.connect(true).fail(function (err) {
-            console.error("[[open-idle]] Cannot connect to node: ", err);
-        }).then(function () {
-            return nodeConnection.loadDomains([domainPath], true).fail(function (err) {
-                console.error("[[open-idle]] Cannot register domain: ", err);
-            });
-        }).then(function () {
+		nodeConnection.connect(true).fail(function (err) {
+			console.error("[[open-idle]] Cannot connect to node: ", err);
+		}).then(function () {
+			return nodeConnection.loadDomains([domainPath], true).fail(function (err) {
+				console.error("[[open-idle]] Cannot register domain: ", err);
+			});
+		}).then(function () {
 			console.log('>>'+cmd);
-        }).then(function () {
-            nodeConnection.domains["open.idle"].exec(curOpenDir, cmd)
-            .fail(function (err) {
+		}).then(function () {
+			nodeConnection.domains["open.idle"].exec(curOpenDir, cmd)
+			.fail(function (err) {
 				console.log(_processCmdOutput(err));
-                alert(_processCmdOutput(err));
-            })
-        }).done();
-    }
-	
-	ExtensionUtils.loadStyleSheet(module, "ui.css");	
+				alert(_processCmdOutput(err));
+			})
+		}).done();
+	}
 
-	$('#main-toolbar .buttons').append(IDLEHTML);
-	$( "#open-idle-btn" ).click(function() {
-		handle('IDLE');
-	});
-	
-	$('#main-toolbar .buttons').append(TerminalHTML);
-	$( "#open-terminal-btn" ).click(function() {
-		handle('Terminal');
-	});
+	if (ExtensionUtils.getModulePath(module).substr(0,1) != "/") {
+		console.log('[[open-app]] must be used on mac os only');
+	} else {
+		
+		var file = FileSystem.getFileForPath(ExtensionUtils.getModulePath(module)+'apps.txt');
+		var promise = FileUtils.readAsText(file);  // completes asynchronously
+		promise.done(function (text) {
+
+			var apphtml = '<a data-command="{app}{ $file}" data-lang="{lang}" id="open-{app}-btn" class="open-app-button" href="#" title="Open {with }{app}">{text}</a>',
+				apps = [],
+				line = [],
+				q = [];
+			
+			text = text.replace(' ','').split('\n');
+			for (var i = 0; i < text.length; i++) {
+				if(text[i][0] != '#') {
+					line = text[i].replace(' ','').trim().split(',');
+					q = [['app',line[0]]];
+					if (line.length == 1 || line[1] != 'icon') {
+						q.push(['text',line[0]]);
+					}
+					if(line.length == 3) {
+						q.push(['with ']);
+						q.push([' $file']);
+						q.push(['lang',line[2].trim()]);
+					}
+					apps.push( procc( q, apphtml) );
+					console.log(apps[apps.length-1]);
+				}
+			}
+			
+			ExtensionUtils.loadStyleSheet(module, "ui.css");
+			
+			for (var i = 0; i < apps.length; i++) {
+				$('#main-toolbar .buttons').append(apps[i]);
+				$('#'+apps[i].substr( apps[i].indexOf('" id="')+6 , apps[i].indexOf('" class="')-apps[i].indexOf('" id="')-6 )).click(function() {
+					handle( this.getAttribute('data-command'), this.getAttribute('data-lang') );
+				});
+			}
+		})
+		.fail(function (errorCode) {
+			console.log("[[open-app]] file error: " + errorCode);  // one of the FileSystemError constants
+		});
+	}
 });
