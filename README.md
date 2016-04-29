@@ -1,4 +1,6 @@
-# open-idle
+# Quick launch IDLE and Terminal
 
-A brackets extension to allow you to open current python file in IDLE.
+A brackets extension to add buttons to open IDLE and Terminal on the sidebar.
+
+Mac OS only.
 
