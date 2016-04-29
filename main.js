@@ -34,8 +34,20 @@ define(function (require, exports, module) {
 		nodeConnection      = new NodeConnection(),
 		domainPath          = ExtensionUtils.getModulePath(module) + "domain",
 		ButtonHTML = '<a id="open-idle-btn" href="#" title="Open in IDLE"></a>',
-		cmd = '';
-		
+		curOpenDir,
+        curOpenFile,
+        curOpenLang,
+        cmd = '';
+
+	function _processCmdOutput(data) {
+		data = JSON.stringify(data);
+		data = data
+			.replace(/\\r/g, '\r')
+			.replace(/\\n/g, '\n')
+			.replace(/\"/g, '')
+			.replace(/\\t/g, '\t');
+		return data;
+    }
 	
     function handle() {
         CommandManager.execute("file.saveAll")
@@ -57,9 +69,10 @@ define(function (require, exports, module) {
                 console.error("[[open-idle]] Cannot register domain: ", err);
             });
         }).then(function () {
-            cmd = 'idle '+curOpenFile+' & disown';
+			// run this command
+            cmd = 'idle '+curOpenFile;
         }).then(function () {
-            nodeConnection.domains["idle.open"].exec(curOpenDir, cmd)
+            nodeConnection.domains["open.idle"].exec(curOpenDir, cmd)
             .fail(function (err) {
 				console.log(_processCmdOutput(err));
                 alert(_processCmdOutput(err));
@@ -73,4 +86,5 @@ define(function (require, exports, module) {
 	$( "#open-idle-btn" ).click(function() {
 		handle();
 	});
+	
 });
