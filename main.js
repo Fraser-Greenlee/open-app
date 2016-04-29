@@ -56,21 +56,19 @@ define(function (require, exports, module) {
         curOpenLang = DocumentManager.getCurrentDocument().language._name;
 		
 		if (curOpenLang != 'Python') {
-			console.log('[[open-idle]] can only open python files in IDLE');
-			return false;
+			cmd = 'open -a IDLE';
+		} else {
+			cmd = 'open -a IDLE '+curOpenFile;
 		}
 
         nodeConnection.connect(true).fail(function (err) {
             console.error("[[open-idle]] Cannot connect to node: ", err);
         }).then(function () {
-            console.log('opening ' + curOpenLang + ' in ' + curOpenFile + '...\n');
-
             return nodeConnection.loadDomains([domainPath], true).fail(function (err) {
                 console.error("[[open-idle]] Cannot register domain: ", err);
             });
         }).then(function () {
-			// run this command
-            cmd = 'idle '+curOpenFile;
+			console.log('>>'+cmd);
         }).then(function () {
             nodeConnection.domains["open.idle"].exec(curOpenDir, cmd)
             .fail(function (err) {
