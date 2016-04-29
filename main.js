@@ -33,7 +33,8 @@ define(function (require, exports, module) {
 		NodeConnection      = brackets.getModule("utils/NodeConnection"),
 		nodeConnection      = new NodeConnection(),
 		domainPath          = ExtensionUtils.getModulePath(module) + "domain",
-		ButtonHTML = '<a id="open-idle-btn" href="#" title="Open in IDLE"></a>',
+		IDLEHTML = '<a id="open-idle-btn" href="#" title="Open in IDLE"></a>',
+		TerminalHTML = '<a id="open-terminal-btn" href="#" title="Open Terminal"></a>',
 		curOpenDir,
         curOpenFile,
         curOpenLang,
@@ -49,16 +50,20 @@ define(function (require, exports, module) {
 		return data;
     }
 	
-    function handle() {
+    function handle(app) {
         CommandManager.execute("file.saveAll")
         curOpenDir  = DocumentManager.getCurrentDocument().file._parentPath;
         curOpenFile = DocumentManager.getCurrentDocument().file._path;
         curOpenLang = DocumentManager.getCurrentDocument().language._name;
 		
-		if (curOpenLang != 'Python') {
-			cmd = 'open -a IDLE';
+		if(app == 'IDLE') {
+			if (curOpenLang != 'Python') {
+				cmd = 'open -a IDLE';
+			} else {
+				cmd = 'open -a IDLE '+curOpenFile;
+			}
 		} else {
-			cmd = 'open -a IDLE '+curOpenFile;
+			cmd = 'open -a '+app;
 		}
 
         nodeConnection.connect(true).fail(function (err) {
@@ -79,10 +84,14 @@ define(function (require, exports, module) {
     }
 	
 	ExtensionUtils.loadStyleSheet(module, "ui.css");	
-	//CommandManager.register('Open idle', 'open.idle', handle);
-	$('#main-toolbar .buttons').append(ButtonHTML);
+
+	$('#main-toolbar .buttons').append(IDLEHTML);
 	$( "#open-idle-btn" ).click(function() {
-		handle();
+		handle('IDLE');
 	});
 	
+	$('#main-toolbar .buttons').append(TerminalHTML);
+	$( "#open-terminal-btn" ).click(function() {
+		handle('Terminal');
+	});
 });

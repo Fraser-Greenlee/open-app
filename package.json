@@ -1,0 +1,17 @@
+{
+    "name": "open-idle",
+    "title": "Quick launch IDLE and Terminal",
+    "description": "Open IDLE and Terminal from sidebar. Mac OS only.",
+    "homepage": "https://github.com/Fraser-Greenlee/open-idle/tree/master",
+    "version": "0.0.5",
+    "author": "Fraser-Greenlee",
+    "files": [
+        "domain.js",
+        "main.js",
+        "ui.css",
+        "brackets-builder-panel.html",
+        "README.md"
+    ],
+    "contributors": ["Fraser-Greenlee"],
+    "keywords": ["python","terminal","idle","open","app","osx"]
+}
